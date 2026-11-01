@@ -1,0 +1,59 @@
+{
+  "name": "microlaunch-mcp",
+  "version": "0.1.0",
+  "mcpName": "io.github.greyzor/microlaunch-mcp",
+  "description": "Microlaunch MCP server + MCP Apps widget (ChatGPT app, Claude connector, any MCP host)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:widget": "vite build && node scripts/embed-widget.mjs",
+    "dev": "npm run build:widget && tsx watch src/dev.ts",
+    "start": "tsx src/dev.ts",
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p widget",
+    "smoke": "tsx scripts/smoke.ts",
+    "preview": "vite --config preview/vite.config.ts",
+    "tunnel": "cloudflared tunnel --url http://localhost:8787",
+    "dev:worker": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "logs": "wrangler tail",
+    "package": "cd submission && rm -f ../dist/microlaunch-chatgpt.zip && mkdir -p ../dist && zip -r -X ../dist/microlaunch-chatgpt.zip plugin.json mcp.json assets -x \"*.svg\" && echo built dist/microlaunch-chatgpt.zip"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.2.0",
+    "@modelcontextprotocol/ext-apps": "^2.0.3",
+    "@modelcontextprotocol/server": "^2.2.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261001.1",
+    "@modelcontextprotocol/node": "^2.1.0",
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vite-plugin-singlefile": "^2.3.3",
+    "wrangler": "^4.145.0"
+  },
+  "private": true,
+  "homepage": "https://microlaunch.net",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greyzor/microlaunch-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/greyzor/microlaunch-mcp/issues"
+  },
+  "author": "Microlaunch (https://microlaunch.net)",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-apps",
+    "product-discovery",
+    "launch",
+    "indie-makers",
+    "microlaunch"
+  ]
+}

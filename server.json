@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.greyzor/microlaunch-mcp",
+  "title": "Microlaunch",
+  "description": "Find tools and apps by indie makers: search, top launches, categories, product details and deals.",
+  "repository": {
+    "url": "https://github.com/greyzor/microlaunch-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://microlaunch.net",
+  "version": "0.1.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.microlaunch.net/mcp"
+    }
+  ]
+}

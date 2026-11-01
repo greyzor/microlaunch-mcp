@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "microlaunch-mcp",
+  "main": "src/worker.ts",
+  "account_id": "<your-cloudflare-account-id>",
+  "compatibility_date": "2026-06-01",
+  // nodejs_compat: node:crypto / node:async_hooks / Buffer, and env → process.env.
+  "compatibility_flags": ["nodejs_compat"],
+  "build": { "command": "npm run build:widget" },
+  // The MCP URL is permanent once submitted to the ChatGPT directory
+  // (changing it requires contacting OpenAI support).
+  "routes": [{ "pattern": "mcp.microlaunch.net", "custom_domain": true }],
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  // Snapshot + link-health store (src/snapshot.ts, src/health.ts).
+  "kv_namespaces": [{ "binding": "CATALOG", "id": "<your-kv-namespace-id>" }],
+  // */15: leaderboard + deals (+ full catalog at :00) and link checks.
+  // 0 7 * * *: daily broken-link report email.
+  "triggers": { "crons": ["*/15 * * * *", "0 7 * * *"] },
+  // Parsing the 11 MB catalog needs more than the default CPU allowance.
+  "limits": { "cpu_ms": 60000 },
+  "vars": {
+    "PUBLIC_URL": "https://mcp.microlaunch.net",
+    "MICROLAUNCH_SITE_URL": "https://microlaunch.net",
+    "MICROLAUNCH_API_URL": "https://nextjs-twitter-api.vercel.app",
+    "POSTHOG_HOST": "https://eu.posthog.com",
+    // Flip to "1" (and set the LINK_SECRET secret) to route result links through /go.
+    "LINK_PROXY": "1",
+    // ChatGPT directory rules forbid showing plans/prices; keep "0" there.
+    "SHOW_PRICING": "0",
+    "MICROLAUNCH_DRAFT_HANDOFF": "0",
+    // Maker tool; off for the consumer-only ChatGPT directory build.
+    "ENABLE_PLAN_LAUNCH": "0",
+    // Disabled until alternatives search is fixed.
+    "ENABLE_ALTERNATIVES": "0",
+    // Daily report recipient(s), comma-separated. Default = super-admin email
+    // from the backend (ADMIN_EMAIL fallback in nextjs-twitter-api).
+    "REPORT_TO": "microlaunch@stimpack.io",
+    "LINK_CHECK_BUDGET": "150"
+  }
+  // Secrets (wrangler secret put …): POSTHOG_KEY, LINK_SECRET,
+  // OPENAI_APPS_CHALLENGE, ADMIN_TOKEN, RESEND_API_KEY, MICROLAUNCH_PLUGIN_KEY
+}

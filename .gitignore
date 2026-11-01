@@ -1,0 +1,9 @@
+node_modules
+dist
+.vercel
+.env*
+src/generated/
+.wrangler
+.dev.vars
+.admin-token
+wrangler.jsonc
