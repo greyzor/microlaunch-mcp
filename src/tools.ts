@@ -3,7 +3,7 @@ import { registerAppTool } from "@modelcontextprotocol/ext-apps/server"
 import { z } from "zod/v4"
 import { PLATFORMS, PRICING, findAlternatives, getCategories, getCategoryBest, getCategoryPressure, getDeals, getLeaderboard, getProduct, getTagBest, resolveCategory, resolveTag, searchProducts, type ProductCard } from "./api.js"
 import { track } from "./analytics.js"
-import { ALPHA_TOOLS, DRAFT_HANDOFF, ENABLE_ALTERNATIVES, ENABLE_PLAN_LAUNCH, FREE_LAUNCH, LIMITS, SHOW_PRICING, TIERS, type Host } from "./config.js"
+import { ALPHA_TOOLS, DRAFT_HANDOFF, toolEnabled, ENABLE_ALTERNATIVES, ENABLE_PLAN_LAUNCH, FREE_LAUNCH, LIMITS, SHOW_PRICING, TIERS, type Host } from "./config.js"
 import { altPath, categoryPath, tagPath, encodeDraft, productLink, productPath, siteLink, websiteLink } from "./links.js"
 
 export const WIDGET_URI = "ui://microlaunch/board-v6.html"
@@ -46,6 +46,7 @@ const alphaNote = (tool: string) =>
 export function registerTools(server: McpServer, host: Host) {
   const ui = { ui: { resourceUri: WIDGET_URI } }
 
+  if (toolEnabled("search_products"))
   registerAppTool(
     server,
     "search_products",
@@ -103,7 +104,7 @@ export function registerTools(server: McpServer, host: Host) {
         if (!resolved.slug) {
           const list = resolved.suggestions.map((c) => `${c.label} (${c.slug})`).join(", ")
           return {
-            content: [{ type: "text", text: `"${category}" isn't a Microlaunch category. Closest options: ${list}. Pick one, or use search_products for free-text needs.` }],
+            content: [{ type: "text", text: `"${category}" isn't a Microlaunch category. Closest options: ${list}. Pick one${toolEnabled("search_products") ? ", or use search_products for free-text needs" : ", or try browse_tag"}.` }],
             structuredContent: { view: "error", message: `No category “${category}”. Try: ${resolved.suggestions.slice(0, 6).map((c) => c.label).join(", ")}` },
           }
         }
@@ -143,7 +144,7 @@ export function registerTools(server: McpServer, host: Host) {
         if (!resolved.tag) {
           const list = resolved.suggestions.map((t) => `${t.label} (${t.slug})`).join(", ")
           return {
-            content: [{ type: "text", text: `"${tag}" isn't a Microlaunch tag. Closest tags: ${list}. Pick one, or use browse_category / search_products.` }],
+            content: [{ type: "text", text: `"${tag}" isn't a Microlaunch tag. Closest tags: ${list}. Pick one, or use browse_category${toolEnabled("search_products") ? " / search_products" : ""}.` }],
             structuredContent: { view: "error", message: `No tag “${tag}”. Try: ${resolved.suggestions.slice(0, 6).map((t) => t.label).join(", ")}` },
           }
         }
@@ -210,7 +211,7 @@ export function registerTools(server: McpServer, host: Host) {
     {
       title: "Microlaunch product details",
       description:
-        "Get details for one Microlaunch product by its slug (from search_products or top_launches results): description, category, stage, votes, reviews count and awards.",
+        "Get details for one Microlaunch product by its slug (from browse_category, browse_tag or top_launches results): description, category, stage, votes, reviews count and awards.",
       inputSchema: { slug: z.string().min(1).max(100).describe("Product slug, e.g. 'tagparrot'") },
       annotations: READ_ONLY,
       _meta: { ...ui, "openai/toolInvocation/invoking": "Opening product…", "openai/toolInvocation/invoked": "Product loaded" },
@@ -221,7 +222,7 @@ export function registerTools(server: McpServer, host: Host) {
         track(host, "get_product", { slug, found: Boolean(p) })
         if (!p) {
           return {
-            content: [{ type: "text", text: `No Microlaunch product with slug "${slug}". Use search_products to find the right slug.` }],
+            content: [{ type: "text", text: `No Microlaunch product with slug "${slug}". ${toolEnabled("search_products") ? "Use search_products" : "Use browse_category or browse_tag"} to find the right slug.` }],
             structuredContent: { view: "error", message: `No product “${slug}” on Microlaunch.` },
           }
         }
@@ -244,6 +245,7 @@ export function registerTools(server: McpServer, host: Host) {
     },
   )
 
+  if (toolEnabled("compare_products"))
   registerAppTool(
     server,
     "compare_products",

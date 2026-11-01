@@ -101,13 +101,15 @@ function star(c: Pick) {
   return el
 }
 
+const canCompare = (window as unknown as { __ML?: { compare?: boolean } }).__ML?.compare !== false
+
 function shortlistBar() {
   if (!shortlist.length) return h("div", { id: "shortlist-bar", hidden: true })
   return h("div", { id: "shortlist-bar", class: "shortbar" },
     h("span", {}, h("b", {}, `★ ${shortlist.length}`), ` ${shortlist.map((p) => p.name).join(", ")}`),
     h("span", { class: "actions" },
       h("button", { class: "link", onclick: () => setShortlist([]) }, "Clear"),
-      h("button", { class: "btn sm primary", disabled: shortlist.length < 2, onclick: () => void compare(shortlist.map((p) => p.slug)) }, shortlist.length < 2 ? "Pick 2 to compare" : `Compare ${shortlist.length}`),
+      !canCompare ? null : h("button", { class: "btn sm primary", disabled: shortlist.length < 2, onclick: () => void compare(shortlist.map((p) => p.slug)) }, shortlist.length < 2 ? "Pick 2 to compare" : `Compare ${shortlist.length}`),
     ),
   )
 }

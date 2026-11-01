@@ -1,4 +1,4 @@
-import { PUBLIC_URL, SITE_URL } from "./config.js"
+import { PUBLIC_URL, SITE_URL, toolEnabled } from "./config.js"
 
 // Public pages the app directories require (support + privacy notice).
 // Plain server-rendered HTML; no scripts, no cookies.
@@ -79,12 +79,12 @@ export const briefPage = (s: BriefStats) => layout("Microlaunch in ChatGPT & Cla
 <p>Runs on Cloudflare at <code>${PUBLIC_URL}/mcp</code>. Read-only: nothing can submit, vote or buy.</p>
 <table>
 <tr><th>Tool</th><th>What it does</th></tr>
-<tr><td>search_products <span class="tag">alpha</span></td><td>Find tools for a need, with pricing, platform and category filters</td></tr>
+${toolEnabled("search_products") ? `<tr><td>search_products <span class="tag">alpha</span></td><td>Find tools for a need, with pricing, platform and category filters</td></tr>` : ""}
 <tr><td>browse_category</td><td>Best tools in a category</td></tr>
 <tr><td>browse_tag</td><td>Best tools with a tag (narrower than categories)</td></tr>
 <tr><td>top_launches</td><td>Today's / this week's leaderboard</td></tr>
 <tr><td>get_product</td><td>One product's details, awards, reviews</td></tr>
-<tr><td>compare_products <span class="tag">alpha</span></td><td>2–4 products side by side, by name</td></tr>
+${toolEnabled("compare_products") ? `<tr><td>compare_products <span class="tag">alpha</span></td><td>2–4 products side by side, by name</td></tr>` : ""}
 <tr><td>list_deals</td><td>Maker discounts (codes stay on microlaunch.net)</td></tr>
 </table>
 <ul>
@@ -122,7 +122,7 @@ export const briefPage = (s: BriefStats) => layout("Microlaunch in ChatGPT & Cla
 <ul>
 <li class="todo">Daily broken-link email: needs the email API key set on the server.</li>
 <li class="todo">ChatGPT submission: OpenAI org verification, a 1–2 min demo video, final review of listing and privacy notice.</li>
-<li class="later">Search and compare quality (marked alpha); "alternatives" tool switched off until it's good.</li>
+<li class="later">Search and compare (alpha, switched off in production until they're good); "alternatives" tool switched off until it's good.</li>
 <li class="later">Logos show as initials inside ChatGPT.</li>
 <li class="later">Claude connector directory submission; publishing the Claude Code plugin repo; MCP registries; Chrome extension next.</li>
 </ul>

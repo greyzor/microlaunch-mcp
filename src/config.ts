@@ -35,6 +35,10 @@ export const ENABLE_ALTERNATIVES = process.env.ENABLE_ALTERNATIVES === "1"
 // Tools whose results aren't reliable yet: labelled "alpha" in the tool title,
 // the text answer and the widget. Remove a name once its quality is there.
 export const ALPHA_TOOLS = new Set(["search_products", "compare_products"])
+// Alpha tools aren't registered at all unless ENABLE_ALPHA_TOOLS=1 (off in
+// production since 2026-11-01: search and compare aren't good enough yet).
+export const ENABLE_ALPHA_TOOLS = process.env.ENABLE_ALPHA_TOOLS === "1"
+export const toolEnabled = (name: string) => ENABLE_ALPHA_TOOLS || !ALPHA_TOOLS.has(name)
 
 // Token from the OpenAI platform dashboard, served at
 // /.well-known/openai-apps-challenge for domain verification.
