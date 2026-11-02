@@ -1,8 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/server"
-import { registerAppTool } from "@modelcontextprotocol/ext-apps/server"
+import { registerAppTool as registerAppToolRaw } from "@modelcontextprotocol/ext-apps/server"
 import { z } from "zod/v4"
 import { PLATFORMS, PRICING, findAlternatives, getCategories, getCategoryBest, getCategoryPressure, getDeals, getLeaderboard, getProduct, getTagBest, resolveCategory, resolveTag, searchProducts, type ProductCard } from "./api.js"
-import { track } from "./analytics.js"
+import { toolScope, track, trackError } from "./analytics.js"
 import { ALPHA_TOOLS, DRAFT_HANDOFF, toolEnabled, ENABLE_ALTERNATIVES, ENABLE_PLAN_LAUNCH, FREE_LAUNCH, LIMITS, SHOW_PRICING, TIERS, type Host } from "./config.js"
 import { altPath, categoryPath, tagPath, encodeDraft, productLink, productPath, siteLink, websiteLink } from "./links.js"
 
@@ -28,8 +28,15 @@ function bullet(c: ProductCard & { url: string }) {
   return `- [${c.name}](${c.url})${c.tagline ? ` — ${c.tagline}` : ""}${tags ? ` (${tags})` : ""}`
 }
 
-function failure(tool: string, err: unknown): ToolResult {
+// Every tool runs inside toolScope, so track()/trackError() can add duration_ms.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const registerAppTool: typeof registerAppToolRaw = (server: any, name: any, config: any, cb: any) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registerAppToolRaw(server, name, config, (...args: any[]) => toolScope.run({ t0: Date.now() }, () => cb(...args)))
+
+function failure(host: Host, tool: string, err: unknown): ToolResult {
   console.error(`[${tool}]`, err)
+  trackError(host, tool, err)
   return {
     isError: true,
     content: [{ type: "text", text: "Microlaunch is temporarily unavailable. Try again in a moment." }],
@@ -82,7 +89,7 @@ export function registerTools(server: McpServer, host: Host) {
           structuredContent: { view: "products", title: `Results for “${query}”${filters ? ` · ${filters}` : ""}`, total: res.total, items, more_url: more, alpha: ALPHA_TOOLS.has("search_products") },
         }
       } catch (e) {
-        return failure("search_products", e)
+        return failure(host, "search_products", e)
       }
     },
   )
@@ -122,7 +129,7 @@ export function registerTools(server: McpServer, host: Host) {
           structuredContent: { view: "leaderboard", title: `Best in ${resolved.slug}`, total: res.total, items, more_url: more },
         }
       } catch (e) {
-        return failure("browse_category", e)
+        return failure(host, "browse_category", e)
       }
     },
   )
@@ -164,7 +171,7 @@ export function registerTools(server: McpServer, host: Host) {
           structuredContent: { view: "leaderboard", title: `Best tagged ${label}`, total: res.total, items, more_url: more },
         }
       } catch (e) {
-        return failure("browse_tag", e)
+        return failure(host, "browse_tag", e)
       }
     },
   )
@@ -201,7 +208,7 @@ export function registerTools(server: McpServer, host: Host) {
           structuredContent: { view: "leaderboard", title: `${label}${cat ? ` · ${cat}` : ""}`, total: res.total_in_scope, items, more_url: full },
         }
       } catch (e) {
-        return failure("top_launches", e)
+        return failure(host, "top_launches", e)
       }
     },
   )
@@ -241,7 +248,7 @@ export function registerTools(server: McpServer, host: Host) {
           structuredContent: { view: "product", product: { ...p, website: undefined, url, microlaunch_url: microlaunchUrl } },
         }
       } catch (e) {
-        return failure("get_product", e)
+        return failure(host, "get_product", e)
       }
     },
   )
@@ -308,7 +315,7 @@ export function registerTools(server: McpServer, host: Host) {
           structuredContent: { view: "compare", title: `Comparing ${found.map((p) => p.name).join(" vs ")}`, items: found, alpha: ALPHA_TOOLS.has("compare_products") },
         }
       } catch (e) {
-        return failure("compare_products", e)
+        return failure(host, "compare_products", e)
       }
     },
   )
@@ -346,7 +353,7 @@ export function registerTools(server: McpServer, host: Host) {
           structuredContent: { view: "deals", title: `Maker deals${cat ? ` · ${cat}` : ""}`, total: res.total, items },
         }
       } catch (e) {
-        return failure("list_deals", e)
+        return failure(host, "list_deals", e)
       }
     },
   )
@@ -463,7 +470,7 @@ export function registerTools(server: McpServer, host: Host) {
           structuredContent: { view: "launch_plan", plan },
         }
       } catch (e) {
-        return failure("plan_launch", e)
+        return failure(host, "plan_launch", e)
       }
     },
   )
@@ -500,7 +507,7 @@ function registerFindAlternatives(server: McpServer, host: Host) {
           structuredContent: { view: "products", title: `Alternatives to ${res.reference?.name || to}`, total: items.length, items, more_url: more },
         }
       } catch (e) {
-        return failure("find_alternatives", e)
+        return failure(host, "find_alternatives", e)
       }
     },
   )

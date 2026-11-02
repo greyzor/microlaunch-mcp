@@ -1,4 +1,4 @@
-import { capture } from "./analytics.js"
+import { capture, trackSessionStart } from "./analytics.js"
 import { OPENAI_APPS_CHALLENGE } from "./config.js"
 import { getProduct } from "./api.js"
 import { isDead, loadHealth } from "./health.js"
@@ -10,6 +10,7 @@ import { buildReport, renderReport } from "./report.js"
 import { snapshot } from "./snapshot.js"
 import { upstreamStats } from "./upstream.js"
 import { timingSafeEqual } from "node:crypto"
+import { inBackground } from "./runtime.js"
 import { detectHost, handler } from "./server.js"
 
 const CORS = {
@@ -43,6 +44,10 @@ export async function route(request: Request): Promise<Response> {
 
   if (path === "/mcp") {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS })
+    if (request.method === "POST") {
+      const host = detectHost(request)
+      inBackground(request.clone().json().then((b) => trackSessionStart(host, b), () => {}))
+    }
     const res = await handler.fetch(request)
     const headers = new Headers(res.headers)
     for (const [k, v] of Object.entries(CORS)) headers.set(k, v)

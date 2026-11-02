@@ -46,7 +46,7 @@ export const privacyPage = () => layout("Privacy notice", `
 <h2>What we record</h2>
 <table>
 <tr><th>Data</th><th>Purpose</th></tr>
-<tr><td>Tool name, tool inputs (e.g. search phrase, category), number of results, assistant (ChatGPT / Claude / other), approximate country</td><td>Measure which features are used and improve results</td></tr>
+<tr><td>Tool name, tool inputs (e.g. search phrase, category), number of results, response time, errors, assistant (ChatGPT / Claude / other) and the name and version of the app that connects (e.g. Cursor 1.2), approximate country</td><td>Measure which features are used and improve results</td></tr>
 <tr><td>Clicks on links shown by the App: assistant, tool, product, destination type, approximate country</td><td>Count visits the App sends to Microlaunch and to makers' websites</td></tr>
 </table>
 <p>We do <b>not</b> store IP addresses, user agents, cookies or any identifier that links events to a person, and we do not build profiles. Links opened from the App pass through <code>${PUBLIC_URL || ""}/go/…</code>, which records the click as described above and immediately redirects you. Links to makers' websites include <code>ref=microlaunch</code> and UTM parameters so makers can see Microlaunch as the source.</p>
