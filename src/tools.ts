@@ -104,7 +104,7 @@ export function registerTools(server: McpServer, host: Host) {
         if (!resolved.slug) {
           const list = resolved.suggestions.map((c) => `${c.label} (${c.slug})`).join(", ")
           return {
-            content: [{ type: "text", text: `"${category}" isn't a Microlaunch category. Closest options: ${list}. Pick one${toolEnabled("search_products") ? ", or use search_products for free-text needs" : ", or try browse_tag"}.` }],
+            content: [{ type: "text", text: `"${category}" isn't a Microlaunch category. Closest options: ${list}. Pick one${toolEnabled("search_products") ? ", or use search_products for free-text needs" : toolEnabled("browse_tag") ? ", or try browse_tag" : ""}.` }],
             structuredContent: { view: "error", message: `No category “${category}”. Try: ${resolved.suggestions.slice(0, 6).map((c) => c.label).join(", ")}` },
           }
         }
@@ -127,6 +127,7 @@ export function registerTools(server: McpServer, host: Host) {
     },
   )
 
+  if (toolEnabled("browse_tag"))
   registerAppTool(
     server,
     "browse_tag",
@@ -211,7 +212,7 @@ export function registerTools(server: McpServer, host: Host) {
     {
       title: "Microlaunch product details",
       description:
-        "Get details for one Microlaunch product by its slug (from browse_category, browse_tag or top_launches results): description, category, stage, votes, reviews count and awards.",
+        `Get details for one Microlaunch product by its slug (from ${toolEnabled("browse_tag") ? "browse_category, browse_tag" : "browse_category"} or top_launches results): description, category, stage, votes, reviews count and awards.`,
       inputSchema: { slug: z.string().min(1).max(100).describe("Product slug, e.g. 'tagparrot'") },
       annotations: READ_ONLY,
       _meta: { ...ui, "openai/toolInvocation/invoking": "Opening product…", "openai/toolInvocation/invoked": "Product loaded" },
@@ -222,7 +223,7 @@ export function registerTools(server: McpServer, host: Host) {
         track(host, "get_product", { slug, found: Boolean(p) })
         if (!p) {
           return {
-            content: [{ type: "text", text: `No Microlaunch product with slug "${slug}". ${toolEnabled("search_products") ? "Use search_products" : "Use browse_category or browse_tag"} to find the right slug.` }],
+            content: [{ type: "text", text: `No Microlaunch product with slug "${slug}". ${toolEnabled("search_products") ? "Use search_products" : toolEnabled("browse_tag") ? "Use browse_category or browse_tag" : "Use browse_category or top_launches"} to find the right slug.` }],
             structuredContent: { view: "error", message: `No product “${slug}” on Microlaunch.` },
           }
         }

@@ -1,6 +1,6 @@
 # Microlaunch MCP server
 
-[Microlaunch](https://microlaunch.net) is a launch platform and directory of tools and apps built by indie makers and startups (about 6,000 products). This MCP server lets ChatGPT, Claude, Cursor or any MCP client browse that catalog by category and tag, show today's top launches, look up products and find maker deals, with an interactive widget in hosts that support MCP Apps.
+[Microlaunch](https://microlaunch.net) is a launch platform and directory of tools and apps built by indie makers and startups (about 6,000 products). This MCP server lets ChatGPT, Claude, Cursor or any MCP client browse that catalog by category, show today's top launches, look up products and find maker deals, with an interactive widget in hosts that support MCP Apps.
 
 It is read-only and needs no API key or account.
 
@@ -9,7 +9,6 @@ It is read-only and needs no API key or account.
 | Tool | What it does |
 | --- | --- |
 | `browse_category` | Best-ranked products in a category ("AI tools", "productivity"…). |
-| `browse_tag` | Best-ranked products with a tag ("chrome extension", "no-code"…). |
 | `top_launches` | The leaderboard for today, the last 7 days or the last 30 days. |
 | `get_product` | One product: description, votes, reviews and awards. |
 | `list_deals` | Active maker deals (claim them on microlaunch.net). |
@@ -18,6 +17,7 @@ It is read-only and needs no API key or account.
 
 - `search_products`: find tools for a need, with filters for pricing, platform and category.
 - `compare_products`: 2 to 4 products side by side.
+- `browse_tag`: best-ranked products with a tag ("chrome extension", "no-code"…).
 
 ## Install
 

@@ -34,9 +34,9 @@ export const ENABLE_PLAN_LAUNCH = process.env.ENABLE_PLAN_LAUNCH === "1"
 export const ENABLE_ALTERNATIVES = process.env.ENABLE_ALTERNATIVES === "1"
 // Tools whose results aren't reliable yet: labelled "alpha" in the tool title,
 // the text answer and the widget. Remove a name once its quality is there.
-export const ALPHA_TOOLS = new Set(["search_products", "compare_products"])
+export const ALPHA_TOOLS = new Set(["search_products", "compare_products", "browse_tag"])
 // Alpha tools aren't registered at all unless ENABLE_ALPHA_TOOLS=1 (off in
-// production since 2026-11-01: search and compare aren't good enough yet).
+// production since 2026-11-01: search, compare and tags aren't good enough yet).
 export const ENABLE_ALPHA_TOOLS = process.env.ENABLE_ALPHA_TOOLS === "1"
 export const toolEnabled = (name: string) => ENABLE_ALPHA_TOOLS || !ALPHA_TOOLS.has(name)
 

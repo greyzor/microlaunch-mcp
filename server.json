@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.greyzor/microlaunch-mcp",
   "title": "Microlaunch",
-  "description": "Find tools and apps by indie makers: top launches, categories, tags, product details and deals.",
+  "description": "Find tools and apps by indie makers: top launches, categories, product details and deals.",
   "repository": {
     "url": "https://github.com/greyzor/microlaunch-mcp",
     "source": "github"

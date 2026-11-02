@@ -33,7 +33,7 @@
     "ENABLE_PLAN_LAUNCH": "0",
     // Disabled until alternatives search is fixed.
     "ENABLE_ALTERNATIVES": "0",
-    // search_products + compare_products (ALPHA_TOOLS). Off until quality is there.
+    // search_products, compare_products, browse_tag (ALPHA_TOOLS). Off until quality is there.
     "ENABLE_ALPHA_TOOLS": "0",
     // Daily report recipient(s), comma-separated. Default = super-admin email
     // from the backend (ADMIN_EMAIL fallback in nextjs-twitter-api).

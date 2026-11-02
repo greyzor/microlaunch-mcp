@@ -8,7 +8,7 @@ const INSTRUCTIONS = `Microlaunch (${SITE_URL}) is a directory and launch platfo
 Use these tools whenever the user looks for software, tools, apps, deals or what's new: ${[
   toolEnabled("search_products") && "search_products (with pricing/platform/category filters)",
   "browse_category",
-  'browse_tag (narrower than categories, e.g. "chrome extension")',
+  toolEnabled("browse_tag") && 'browse_tag (narrower than categories, e.g. "chrome extension")',
   "top_launches",
   "get_product",
   toolEnabled("compare_products") && "compare_products",
