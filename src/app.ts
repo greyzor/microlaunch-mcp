@@ -25,6 +25,24 @@ const html = (body: string) => new Response(body, { headers: { "content-type": "
 // not counted as clicks.
 const BOTS = /bot|crawl|spider|preview|slurp|facebookexternalhit|embedly|unfurl|headless|chatgpt-user|oai-searchbot|gptbot|claude-user|claudebot|anthropic|perplexity/i
 
+// Non-human fetches of /go links, kept out of mcp_link_click and counted as
+// mcp_agent_fetch instead. fetch_type: "agent" = an assistant opening the page
+// for a user, "crawler" = indexing, "preview" = link unfurls, "other" = unknown bot.
+const AGENTS: Array<[RegExp, string, "agent" | "crawler" | "preview"]> = [
+  [/chatgpt-user/i, "chatgpt", "agent"],
+  [/claude-user/i, "claude", "agent"],
+  [/perplexity-user/i, "perplexity", "agent"],
+  [/oai-searchbot|gptbot/i, "openai", "crawler"],
+  [/claudebot|claude-searchbot|anthropic/i, "anthropic", "crawler"],
+  [/perplexitybot|perplexity/i, "perplexity", "crawler"],
+  [/googlebot|bingbot|applebot|duckduckbot|yandex|baiduspider|slurp/i, "search_engine", "crawler"],
+  [/slackbot|twitterbot|discordbot|telegrambot|whatsapp|linkedinbot|facebookexternalhit|embedly|unfurl|preview|skypeuripreview/i, "link_preview", "preview"],
+]
+function classifyBot(ua: string) {
+  for (const [re, agent, fetch_type] of AGENTS) if (re.test(ua)) return { agent, fetch_type }
+  return { agent: "other", fetch_type: "other" as const }
+}
+
 // "product" tokens carry only the slug; the product's own website is looked
 // up at click time (cached), falling back to its Microlaunch page.
 async function destination(t: Token): Promise<{ url: string; resolved: "website" | "microlaunch" | "fallback" }> {
@@ -58,9 +76,10 @@ export async function route(request: Request): Promise<Response> {
     const token = readToken(path.slice(4))
     if (!token) return new Response("Invalid link", { status: 404 })
     const dest = await destination(token)
-    if (!BOTS.test(request.headers.get("user-agent") || "")) {
-      capture("mcp_link_click", token.host, { tool: token.tool, kind: token.kind, resolved: dest.resolved, slug: token.slug, dest_host: new URL(dest.url).hostname })
-    }
+    const ua = request.headers.get("user-agent") || ""
+    const link = { tool: token.tool, kind: token.kind, resolved: dest.resolved, slug: token.slug, dest_host: new URL(dest.url).hostname }
+    if (!BOTS.test(ua)) capture("mcp_link_click", token.host, link)
+    else capture("mcp_agent_fetch", token.host, { ...classifyBot(ua), ...link })
     return new Response(null, { status: 302, headers: { location: dest.url, "cache-control": "no-store", "referrer-policy": "no-referrer-when-downgrade" } })
   }
 
