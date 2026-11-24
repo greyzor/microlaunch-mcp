@@ -11,7 +11,7 @@ import { snapshot } from "./snapshot.js"
 import { upstreamStats } from "./upstream.js"
 import { timingSafeEqual } from "node:crypto"
 import { inBackground } from "./runtime.js"
-import { detectHost, handler } from "./server.js"
+import { detectHost, detectSource, handler } from "./server.js"
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -64,7 +64,8 @@ export async function route(request: Request): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS })
     if (request.method === "POST") {
       const host = detectHost(request)
-      inBackground(request.clone().json().then((b) => trackSessionStart(host, b), () => {}))
+      const src = detectSource(request)
+      inBackground(request.clone().json().then((b) => trackSessionStart(host, b, src), () => {}))
     }
     const res = await handler.fetch(request)
     const headers = new Headers(res.headers)

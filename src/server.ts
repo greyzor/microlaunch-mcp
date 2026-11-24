@@ -29,6 +29,14 @@ export function detectHost(req?: Request): Host {
   return "mcp"
 }
 
+// Where the connection URL was copied from (?src=mcp_page on microlaunch.net/mcp), so sessions can be
+// attributed to the page. Only short slugs are kept; anything else is dropped.
+export function detectSource(req?: Request): string | undefined {
+  if (!req) return undefined
+  const src = new URL(req.url).searchParams.get("src")
+  return src && /^[a-z0-9_-]{1,32}$/.test(src) ? src : undefined
+}
+
 // Tells the widget which optional tools exist (hides "Compare" when compare_products is off).
 const widgetHtml = () =>
   WIDGET_HTML.replace("<head>", `<head><script>window.__ML=${JSON.stringify({ compare: toolEnabled("compare_products") })}</script>`)

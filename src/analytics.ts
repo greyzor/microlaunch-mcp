@@ -41,7 +41,7 @@ export function trackError(host: Host, tool: string, err: unknown) {
 
 // MCP initialize: which client app connects (Cursor, VS Code, Claude Desktop…).
 // clientInfo names the software, not the person.
-export function trackSessionStart(host: Host, body: unknown) {
+export function trackSessionStart(host: Host, body: unknown, src?: string) {
   const msgs = Array.isArray(body) ? body : [body]
   const init = msgs.find((m) => m && typeof m === "object" && (m as { method?: unknown }).method === "initialize") as
     | { params?: { protocolVersion?: string; clientInfo?: { name?: string; version?: string } } }
@@ -52,5 +52,6 @@ export function trackSessionStart(host: Host, body: unknown) {
     client_name: String(info?.name ?? "unknown").slice(0, 80),
     client_version: String(info?.version ?? "").slice(0, 40),
     protocol_version: init.params?.protocolVersion,
+    ...(src ? { src } : {}),
   })
 }
