@@ -6,7 +6,7 @@ import { toolScope, track, trackError } from "./analytics.js"
 import { ALPHA_TOOLS, DRAFT_HANDOFF, toolEnabled, ENABLE_ALTERNATIVES, ENABLE_PLAN_LAUNCH, FREE_LAUNCH, LIMITS, SHOW_PRICING, TIERS, type Host } from "./config.js"
 import { altPath, categoryPath, tagPath, encodeDraft, productLink, productPath, siteLink, websiteLink } from "./links.js"
 
-export const WIDGET_URI = "ui://microlaunch/board-v6.html"
+export const WIDGET_URI = "ui://microlaunch/board-v7.html"
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, openWorldHint: false, idempotentHint: true } as const
 

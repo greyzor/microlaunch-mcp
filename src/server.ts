@@ -42,6 +42,10 @@ const widgetHtml = () =>
   WIDGET_HTML.replace("<head>", `<head><script>window.__ML=${JSON.stringify({ compare: toolEnabled("compare_products") })}</script>`)
 
 const WIDGET_META = {
+  // One widget serves every tool. Without its own description ChatGPT copies the first tool's,
+  // which then shows up on unrelated tools (e.g. list_deals) in the directory review.
+  "openai/widgetDescription":
+    "Shows Microlaunch results as interactive cards: product details, category and launch leaderboards ranked by community votes, and maker deals. Links open on Microlaunch.",
   ui: {
     prefersBorder: true,
     // Stable origin for the widget sandbox (required for directory review).
