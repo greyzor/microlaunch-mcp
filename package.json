@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build:widget": "vite build && node scripts/embed-widget.mjs",
+    "build:widget": "vite build && node scripts/embed-widget.mjs && node scripts/embed-icons.mjs",
     "dev": "npm run build:widget && tsx watch src/dev.ts",
     "start": "tsx src/dev.ts",
     "typecheck": "tsc --noEmit -p . && tsc --noEmit -p widget",

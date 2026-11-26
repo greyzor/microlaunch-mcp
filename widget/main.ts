@@ -3,14 +3,14 @@ import { App, applyDocumentTheme, applyHostFonts, applyHostStyleVariables } from
 // Types mirror the structuredContent emitted by src/tools.ts.
 type Card = {
   slug: string; name: string; tagline: string; category: string | null; logo: string | null
-  stage: string | null; pricing_model: string | null; featured: boolean; votes?: number; rank?: number
+  stage: string | null; pricing_model: string | null; votes?: number; rank?: number
   url: string // the product's own website (via /go)
   microlaunch_url: string
 }
 type Product = Card & {
   description: string | null; votes_all_time: number; reviews: number; awards: string[]
 }
-type Deal = { product: Card; title: string; type: string; value: string | null; featured: boolean; url: string; microlaunch_url: string }
+type Deal = { product: Card; title: string; type: string; value: string | null; url: string; microlaunch_url: string }
 type Check = { id: string; label: string; status: "pass" | "warn" | "fail" | "info"; tip: string }
 type Plan = {
   product: { name: string; url: string; tagline: string; category: string | null }
@@ -140,7 +140,7 @@ function productRow(c: Card, ranked: boolean) {
     ranked ? h("span", { class: "rank" }, String(c.rank ?? "")) : null,
     logo(c),
     h("div", { class: "info" },
-      h("div", { class: "name" }, h("span", {}, c.name), c.featured ? h("span", { class: "badge" }, "Featured") : null),
+      h("div", { class: "name" }, h("span", {}, c.name)),
       h("div", { class: "tagline" }, c.tagline),
       h("div", { class: "chips" }, c.category && h("span", { class: "chip" }, c.category), c.pricing_model && h("span", { class: "chip" }, c.pricing_model)),
     ),
@@ -172,7 +172,7 @@ function renderProduct(p: Product, withBack: boolean) {
       h("div", { class: "detail-top" },
         logo(p, "lg"),
         h("div", { class: "info" },
-          h("div", { class: "name" }, h("h3", {}, p.name), p.featured ? h("span", { class: "badge" }, "Featured") : null, star(p)),
+          h("div", { class: "name" }, h("h3", {}, p.name), star(p)),
           h("p", {}, p.tagline),
         ),
       ),
@@ -200,7 +200,7 @@ function renderDeals(v: Extract<View, { view: "deals" }>) {
       h("div", { class: "row no-rank" },
         logo(d.product),
         h("div", { class: "info" },
-          h("div", { class: "name" }, h("span", {}, d.product.name), d.featured ? h("span", { class: "badge" }, "Featured") : null),
+          h("div", { class: "name" }, h("span", {}, d.product.name)),
           h("div", { class: "tagline" }, d.title),
           h("div", { class: "chips" }, h("span", { class: "chip" }, d.type), d.value && h("span", { class: "chip" }, d.value)),
         ),
@@ -230,7 +230,7 @@ function renderCompare(v: Extract<View, { view: "compare" }>) {
       h("table", { class: "cmp" },
         h("thead", {}, h("tr", {}, h("th", {}),
           ...v.items.map((p) => h("th", {},
-            h("div", { class: "cmp-head" }, logo(p), h("span", {}, p.name), p.featured ? h("span", { class: "badge" }, "Featured") : null),
+            h("div", { class: "cmp-head" }, logo(p), h("span", {}, p.name)),
           )),
         )),
         h("tbody", {},

@@ -8,8 +8,8 @@ export class RateLimited extends Error {}
 
 export const upstreamStats = { calls: 0, since: Date.now(), byPath: {} as Record<string, number> }
 
-export async function getJson<T>(path: string, timeoutMs = 15_000, edgeTtl = 300): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json", "x-ml-client": "mcp-plugin" }
+export async function getJson<T>(path: string, timeoutMs = 15_000, edgeTtl = 300, extraHeaders: Record<string, string> = {}): Promise<T> {
+  const headers: Record<string, string> = { Accept: "application/json", "x-ml-client": "mcp-plugin", ...extraHeaders }
   if (PLUGIN_KEY) headers["x-ml-plugin-key"] = PLUGIN_KEY
   const key = path.split("?")[0]
   upstreamStats.calls++

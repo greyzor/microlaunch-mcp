@@ -1,6 +1,7 @@
 import { CACHE_TTL_MS, LIMITS } from "./config.js"
 import { cached } from "./cache.js"
 import { imageLink } from "./links.js"
+import { liveGate } from "./audience.js"
 
 // Thin read-only client over the public Microlaunch API. Only whitelisted
 // fields leave this module; maker emails, revenue figures, vote internals
@@ -13,6 +14,8 @@ type RawProduct = {
   problem_label?: string | null
   solution_label?: string | null
   description?: string | null
+  niche_kws?: unknown
+  icp_kws?: unknown
   logo_src?: string | null
   market?: string | null
   stage?: string | null
@@ -43,7 +46,6 @@ export type ProductCard = {
   logo: string | null
   stage: string | null
   pricing_model: string | null
-  featured: boolean
   votes?: number
   rank?: number
   launched_on?: string | null
@@ -63,7 +65,6 @@ export type Deal = {
   title: string
   type: string
   value: string | null
-  featured: boolean
   // Raw maker deal page; tools only expose it through websiteLink().
   deal_url: string | null
 }
@@ -88,10 +89,16 @@ function fromSnap(p: SnapProduct, withLaunch = false): ProductCard {
     logo: imageLink(p.logo),
     stage: p.stage,
     pricing_model: p.pricing,
-    featured: p.featured,
     ...(withLaunch ? { votes: p.votes, launched_on: p.launched_on } : {}),
   }
 }
+
+// Ranking uses community signals only (votes, reviews, awards), never
+// Microlaunch's internal product_points, which reflect launch packages.
+const byLaunchVotes = (a: SnapProduct, b: SnapProduct) =>
+  b.votes - a.votes || b.votes_all_time - a.votes_all_time || b.reviews - a.reviews || String(b.launched_on ?? "").localeCompare(String(a.launched_on ?? ""))
+const byAllTime = (a: SnapProduct, b: SnapProduct) =>
+  b.votes_all_time - a.votes_all_time || b.reviews - a.reviews || b.awards.length - a.awards.length || b.votes - a.votes
 
 const STOP = new Set(["a", "an", "and", "the", "for", "of", "to", "in", "on", "with", "my", "me", "i", "best", "good", "tool", "tools", "app", "apps", "software", "platform", "find", "some", "any"])
 // Crude stemming so "invoicing" matches "invoice", "freelancers" matches "freelance".
@@ -119,8 +126,8 @@ function searchSnapshot(products: SnapProduct[], q: string, f: SearchFilters) {
     }
     if (matched >= need) out.push({ p, matched, score })
   }
-  // Relevance first; within equal relevance, Featured (paid) then popularity.
-  out.sort((a, b) => b.matched - a.matched || b.score - a.score || Number(b.p.featured) - Number(a.p.featured) || b.p.votes_all_time - a.p.votes_all_time)
+  // Relevance first; within equal relevance, community popularity.
+  out.sort((a, b) => b.matched - a.matched || b.score - a.score || byAllTime(a.p, b.p))
   return out.map((x) => x.p)
 }
 
@@ -138,7 +145,6 @@ function toCard(p: RawProduct, launch?: RawLaunch): ProductCard {
     logo: imageLink(p.logo_src),
     stage: p.stage || null,
     pricing_model: p.offer_type || null,
-    featured: Boolean(p.is_premium || launch?.is_premium),
     ...(launch ? { votes: launch.votes ?? 0, launched_on: launch.start_date ?? null } : {}),
   }
 }
@@ -150,12 +156,13 @@ const SCOPE_DAYS: Record<Scope, number> = { today: 1, this_week: 7, this_month: 
 
 async function loadBoard(): Promise<ProductCard[]> {
   // The default payload is the live leaderboard (~400 launches, 1MB+), hence
-  // the long cache. Sorted by Microlaunch's own ranking (product_points).
+  // the long cache. Sorted by votes (see byLaunchVotes).
   const data = await getJson<{ launches: RawLaunch[]; products: RawProduct[] }>("/api/launches", 30_000)
-  const byId = new Map(data.products.map((p) => [p.id, p]))
+  const g = await liveGate()
+  const byId = new Map(data.products.filter(g.product).map((p) => [p.id, p]))
   return data.launches
     .filter((l) => l.status === "live" && byId.has(l.product_id))
-    .sort((a, b) => (b.product_points ?? 0) - (a.product_points ?? 0))
+    .sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0) || (b.votes_all_time ?? 0) - (a.votes_all_time ?? 0))
     .map((l) => toCard(byId.get(l.product_id)!, l))
 }
 
@@ -166,7 +173,7 @@ function inWindow(cards: ProductCard[], scope: Scope) {
 
 async function boardCards(): Promise<ProductCard[]> {
   const snap = await snapshot()
-  if (snap) return snap.live.board.map((p) => fromSnap(p, true))
+  if (snap) return [...snap.live.board].sort(byLaunchVotes).map((p) => fromSnap(p, true))
   return cached("board", CACHE_TTL_MS.launches, loadBoard)
 }
 
@@ -245,8 +252,9 @@ export async function searchProducts(query: string, limit: number, filters: Sear
   return cached(key, CACHE_TTL_MS.search, async () => {
     try {
       const data = await getJson<{ products: RawSearchProduct[]; total: number }>(`/api/search?q=${encodeURIComponent(q)}&limit=${fetchN}`)
-      const hits = data.products.filter((p) => matches(p, filters))
-      // The API already ranks featured (premium) products first.
+      // Dev-only path (production always has a snapshot, ranked by searchSnapshot).
+      const g = await liveGate()
+      const hits = data.products.filter((p) => g.product(p) && matches(p, filters))
       return { total: filtered ? hits.length : data.total, items: hits.slice(0, n).map((p) => toCard(p)), degraded: false }
     } catch (e) {
       if (!(e instanceof RateLimited)) throw e
@@ -277,16 +285,17 @@ async function localSearch(q: string, n: number, filters: SearchFilters) {
 export async function getCategoryBest(category: string) {
   const snap = await snapshot()
   if (snap) {
-    const inCat = snap.catalog.products.filter((p) => p.category === category).sort((a, b) => b.points - a.points || b.votes_all_time - a.votes_all_time)
+    const inCat = snap.catalog.products.filter((p) => p.category === category).sort(byAllTime)
     return { total: inCat.length, items: inCat.slice(0, LIMITS.leaderboard).map((p, i) => ({ ...fromSnap(p), rank: i + 1 })) }
   }
   const all = await cached(`cat:${category}`, 30 * 60_000, async () => {
     const data = await getJson<{ launches: RawLaunch[]; products: RawProduct[] }>(`/api/launches?cat=${encodeURIComponent(category)}`, 20_000)
-    const byId = new Map(data.products.map((p) => [p.id, p]))
+    const g = await liveGate()
+    const byId = new Map(data.products.filter(g.product).map((p) => [p.id, p]))
     const seen = new Set<number>()
     return data.launches
       .filter((l) => byId.has(l.product_id) && !seen.has(l.product_id) && seen.add(l.product_id))
-      .sort((a, b) => (b.product_points ?? 0) - (a.product_points ?? 0))
+      .sort((a, b) => (b.votes_all_time ?? 0) - (a.votes_all_time ?? 0) || (b.votes ?? 0) - (a.votes ?? 0))
       .map((l) => toCard(byId.get(l.product_id)!, l))
   })
   return { total: all.length, items: all.slice(0, LIMITS.leaderboard).map((c, i) => ({ ...c, rank: i + 1 })) }
@@ -318,7 +327,8 @@ export async function findAlternatives(name: string) {
     }
     // "Reference" rows are the incumbent itself, not a Microlaunch product.
     const reference = data.products.find((p) => p.source === "Reference") || null
-    const items = data.products.filter((p) => p.source !== "Reference").slice(0, LIMITS.alternatives).map((p) => toCard(p))
+    const g = await liveGate()
+    const items = data.products.filter((p) => p.source !== "Reference" && g.product(p)).slice(0, LIMITS.alternatives).map((p) => toCard(p))
     return { reference: reference ? { slug: reference.slug, name: reference.codename } : null, items }
   })
 }
@@ -360,7 +370,7 @@ export async function getProduct(slug: string): Promise<ProductDetail | null> {
       throw e
     }
     const p = data.products?.[0]
-    if (!p) return null
+    if (!p || !(await liveGate()).product(p)) return null
     const launches = (data.launches || []).filter((l) => l.product_id === p.id && ["live", "finished", "archived"].includes(l.status))
     const latest = launches.sort((a, b) => String(b.start_date).localeCompare(String(a.start_date)))[0]
     const card = toCard(p, latest)
@@ -390,8 +400,9 @@ export async function getDeals(category?: string) {
       .filter((d) => bySlug.has(d.slug) && (!d.expires_at || Date.parse(d.expires_at) > now))
       // A deal whose page is dead is never shown.
       .filter((d) => !isDead(health, d.deal_url))
-      .sort((a, b) => Number(b.featured) - Number(a.featured) || b.priority - a.priority)
-      .map<Deal>((d) => ({ product: fromSnap(bySlug.get(d.slug)!), title: d.title, type: d.type, value: d.value, featured: d.featured, deal_url: d.deal_url }))
+      // Ordered by the product's community standing, never by payment.
+      .sort((a, b) => byAllTime(bySlug.get(a.slug)!, bySlug.get(b.slug)!))
+      .map<Deal>((d) => ({ product: fromSnap(bySlug.get(d.slug)!), title: d.title, type: d.type, value: d.value, deal_url: d.deal_url }))
     const pool = category ? all.filter((d) => d.product.category === category) : all
     return { total: pool.length, items: pool.slice(0, LIMITS.deals) }
   }
@@ -400,17 +411,16 @@ export async function getDeals(category?: string) {
       product_deals: Array<{ product_id: string | number; status: string; title: string; deal_type: string; value?: string | null; deal_url?: string | null; is_premium?: boolean; priority?: number; expires_at?: string | null }>
       products: RawProduct[]
     }>("/api/launch-deals")
-    const byId = new Map(data.products.map((p) => [String(p.id), p]))
+    const g = await liveGate()
+    const byId = new Map(data.products.filter(g.product).map((p) => [String(p.id), p]))
     const now = Date.now()
     return data.product_deals
       .filter((d) => d.status === "active" && byId.has(String(d.product_id)) && (!d.expires_at || Date.parse(d.expires_at) > now))
-      .sort((a, b) => Number(Boolean(b.is_premium)) - Number(Boolean(a.is_premium)) || (b.priority ?? 0) - (a.priority ?? 0))
       .map<Deal>((d) => ({
         product: toCard(byId.get(String(d.product_id))!),
         title: clip(d.title, 90),
         type: d.deal_type === "ltd" ? "lifetime deal" : d.deal_type,
         value: d.value ? clip(d.value, 40) : null,
-        featured: Boolean(d.is_premium),
         deal_url: d.deal_url || null,
       }))
   })
@@ -438,7 +448,7 @@ export async function getTags(): Promise<Tag[]> {
   if (snap?.catalog.tags?.length) return snap.catalog.tags
   return cached("tags", 60 * 60_000, async () => {
     const data = await getJson<{ tags: Array<{ slug: string; label?: string; count?: number }> }>("/api/tags", 20_000, 3600)
-    return toTags(data.tags)
+    return toTags(data.tags).filter((await liveGate()).tag)
   })
 }
 
@@ -469,7 +479,7 @@ export async function getTagBest(slug: string) {
     const seen = new Set<string>()
     return (data.tag?.products || [])
       .filter((p) => p.slug && p.codename && !seen.has(p.slug) && seen.add(p.slug))
-      .sort((a, b) => Number(Boolean(b.is_premium)) - Number(Boolean(a.is_premium)) || String(b.launch_start ?? "").localeCompare(String(a.launch_start ?? "")))
+      .sort((a, b) => String(b.launch_start ?? "").localeCompare(String(a.launch_start ?? "")))
       .map((p) => ({ slug: p.slug, card: toCard({ id: 0, ...p }) }))
   })
   const snap = await snapshot()
@@ -477,8 +487,10 @@ export async function getTagBest(slug: string) {
     const inTag = members
       .map((m) => snap.catalog.bySlug.get(m.slug))
       .filter((p): p is SnapProduct => Boolean(p))
-      .sort((a, b) => b.points - a.points || b.votes_all_time - a.votes_all_time)
+      .sort(byAllTime)
     return { total: inTag.length, items: inTag.slice(0, LIMITS.leaderboard).map((p, i) => ({ ...fromSnap(p), rank: i + 1 })) }
   }
-  return { total: members.length, items: members.slice(0, LIMITS.leaderboard).map((m, i) => ({ ...m.card, rank: i + 1 })) }
+  const g = await liveGate()
+  const shown = members.filter((m) => g.product(m))
+  return { total: shown.length, items: shown.slice(0, LIMITS.leaderboard).map((m, i) => ({ ...m.card, rank: i + 1 })) }
 }

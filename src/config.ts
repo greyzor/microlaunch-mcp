@@ -19,6 +19,8 @@ export const PUBLIC_URL = (process.env.PUBLIC_URL || "").replace(/\/$/, "")
 // Route result links through /go/<signed token> to record clicks.
 export const LINK_PROXY = process.env.LINK_PROXY === "1"
 export const LINK_SECRET = process.env.LINK_SECRET || ""
+// Reads Microlaunch's audience list (src/audience.ts).
+export const AUDIENCE_SECRET = process.env.MICROLAUNCH_AUDIENCE_SECRET || ""
 
 // ChatGPT app guidelines forbid showing plans/prices or promoting upgrades,
 // so plan_launch hides tiers unless this is explicitly enabled (e.g. for a
@@ -54,7 +56,17 @@ export const REPORT_FROM = process.env.REPORT_FROM || "Microlaunch Alerts <alert
 export const POSTHOG_KEY = process.env.POSTHOG_KEY || ""
 export const POSTHOG_HOST = process.env.POSTHOG_HOST || "https://eu.posthog.com"
 
-export const SERVER_INFO = { name: "microlaunch", title: "Microlaunch", version: "0.1.0" }
+export const SERVER_INFO = {
+  name: "microlaunch",
+  title: "Microlaunch",
+  version: "0.1.0",
+  websiteUrl: "https://microlaunch.net",
+  // App icon for MCP clients (served by src/app.ts from submission/assets).
+  icons: [
+    { src: `${PUBLIC_URL || "https://mcp.microlaunch.net"}/icon.png`, mimeType: "image/png", sizes: ["256x256"] },
+    { src: `${PUBLIC_URL || "https://mcp.microlaunch.net"}/logo.png`, mimeType: "image/png", sizes: ["512x512"] },
+  ],
+}
 
 // Hard caps: enough to answer a question well, never enough to mirror the
 // catalog. No pagination on purpose.

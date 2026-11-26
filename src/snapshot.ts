@@ -1,5 +1,6 @@
 import { getJson } from "./upstream.js"
 import { kv } from "./runtime.js"
+import { CLOSED, fetchAudience, gate, type Audience, type Gate } from "./audience.js"
 
 // Catalog snapshot: everything the tools need, pulled from the Microlaunch API
 // by the scheduled job (src/worker.ts → scheduled) and stored in KV. Tool
@@ -50,7 +51,7 @@ export type SnapTag = { slug: string; label: string; count: number }
 // until the next hourly catalog refresh.
 export type Catalog = { products: SnapProduct[]; categories: Array<{ slug: string; label: string }>; tags?: SnapTag[] }
 export type Live = { board: SnapProduct[]; deals: SnapDeal[] }
-export type Meta = { catalog_at: number; live_at: number; counts: Record<string, number> }
+export type Meta = { catalog_at: number; live_at: number; audience_at?: number; audience_error?: string; counts: Record<string, number> }
 
 type RawProduct = {
   id: number
@@ -155,7 +156,6 @@ export async function buildLive(): Promise<Live> {
   const boardProducts = new Map(board.products.map((p) => [p.id, p]))
   const liveBoard = board.launches
     .filter((l) => l.status === "live" && boardProducts.has(l.product_id))
-    .sort((a, b) => (b.product_points ?? 0) - (a.product_points ?? 0))
     .map((l) => toSnap(boardProducts.get(l.product_id)!, [l], 0, []))
   const dealProducts = new Map(deals.products.map((p) => [String(p.id), p]))
   const liveDeals = deals.product_deals
@@ -176,7 +176,7 @@ export async function buildLive(): Promise<Live> {
 
 // --- KV persistence -----------------------------------------------------------
 
-const KEYS = { catalog: "snap:catalog", live: "snap:live", meta: "snap:meta" }
+const KEYS = { catalog: "snap:catalog", live: "snap:live", meta: "snap:meta", audience: "snap:audience" }
 
 async function readMeta(): Promise<Meta> {
   return ((await kv()?.get(KEYS.meta, "json")) as Meta | null) ?? { catalog_at: 0, live_at: 0, counts: {} }
@@ -201,6 +201,18 @@ export async function refreshSnapshot(opts: { catalog: boolean }) {
     meta.counts.tags = catalog.tags?.length ?? 0
     meta.counts.catalog_bytes = body.length
   }
+  // Fetched after the catalog so every product in it has been reviewed. On
+  // failure the previous list stays (newer products remain hidden).
+  try {
+    const audience = await fetchAudience()
+    await store.put(KEYS.audience, JSON.stringify(audience))
+    meta.audience_at = Date.now()
+    meta.audience_error = undefined
+    meta.counts.hidden = audience.hidden.length
+  } catch (e) {
+    meta.audience_error = (e as Error).message
+    console.error(`[snapshot] audience refresh failed: ${meta.audience_error}`)
+  }
   await store.put(KEYS.meta, JSON.stringify(meta))
   return meta
 }
@@ -208,20 +220,42 @@ export async function refreshSnapshot(opts: { catalog: boolean }) {
 // --- Per-isolate read cache ---------------------------------------------------
 
 type Loaded = { meta: Meta; catalog: Catalog & { bySlug: Map<string, SnapProduct> }; live: Live }
+type Raw = { meta: Meta; catalog: Catalog; live: Live; audience: Audience | null }
+let raw: Raw | null = null
 let loaded: Loaded | null = null
 let checkedAt = 0
 let loading: Promise<Loaded | null> | null = null
+
+// A list older than this is not trusted (product texts may have changed).
+const AUDIENCE_MAX_AGE_MS = 24 * 3600_000
+
+// Microlaunch's audience list (src/audience.ts) is applied when the snapshot is
+// read, so it covers every tool at once.
+function applyGate(r: Raw): Loaded {
+  const fresh = r.audience && Date.now() - Date.parse(r.audience.generated_at) < AUDIENCE_MAX_AGE_MS
+  const g: Gate = fresh ? gate(r.audience) : CLOSED
+  if (!fresh) console.error("[snapshot] no fresh audience list: showing no products")
+  const products = r.catalog.products.filter(g.product)
+  const visible = new Set([...products, ...r.live.board].filter(g.product).map((p) => p.slug))
+  return {
+    meta: r.meta,
+    catalog: { products, categories: r.catalog.categories, tags: r.catalog.tags?.filter(g.tag), bySlug: new Map(products.map((p) => [p.slug, p])) },
+    live: { board: r.live.board.filter(g.product), deals: r.live.deals.filter((d) => visible.has(d.slug)) },
+  }
+}
 
 async function load(): Promise<Loaded | null> {
   const store = kv()
   if (!store) return null
   const meta = await readMeta()
   if (!meta.catalog_at || !meta.live_at) return null
-  const catalog =
-    loaded && loaded.meta.catalog_at === meta.catalog_at ? loaded.catalog : await store.get<Catalog>(KEYS.catalog, "json").then((c) => (c ? { ...c, bySlug: new Map(c.products.map((p) => [p.slug, p])) } : null))
-  const live = loaded && loaded.meta.live_at === meta.live_at ? loaded.live : await store.get<Live>(KEYS.live, "json")
+  const same = (k: "catalog_at" | "live_at" | "audience_at") => raw && raw.meta[k] === meta[k]
+  const catalog = same("catalog_at") ? raw!.catalog : await store.get<Catalog>(KEYS.catalog, "json")
+  const live = same("live_at") ? raw!.live : await store.get<Live>(KEYS.live, "json")
+  const audience = same("audience_at") ? raw!.audience : await store.get<Audience>(KEYS.audience, "json")
   if (!catalog || !live) return null
-  return { meta, catalog, live }
+  raw = { meta, catalog, live, audience }
+  return applyGate(raw)
 }
 
 // Returns null when no snapshot exists (local dev, or before the first cron

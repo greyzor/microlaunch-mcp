@@ -6,6 +6,7 @@ import { PUBLIC_URL, SITE_URL, toolEnabled } from "./config.js"
 const layout = (title: string, body: string) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title} · Microlaunch app</title>
+<link rel="icon" type="image/png" href="/icon.png">
 <style>
 :root{color-scheme:light dark;--bg:#fff;--fg:#16161c;--muted:#5d5d6b;--accent:#5b4cf0;--line:#e6e6ec}
 @media (prefers-color-scheme:dark){:root{--bg:#121216;--fg:#f1f1f5;--muted:#a3a3b2;--accent:#8f84fb;--line:#2b2b35}}
@@ -32,8 +33,8 @@ export const supportPage = () => layout("Support", `
 <p>Questions, bugs or a product listed incorrectly? Email <a href="mailto:microlaunch@stimpack.io">microlaunch@stimpack.io</a> and we'll get back to you within two business days.</p>
 <h2>Common questions</h2>
 <ul>
-<li><b>Which products appear?</b> Products launched or listed on Microlaunch. Results come from Microlaunch's public directory and rankings.</li>
-<li><b>What does “Featured” mean?</b> The maker used a paid Microlaunch launch package. Featured products are labelled wherever they appear.</li>
+<li><b>Which products appear?</b> Products launched or listed on Microlaunch, ranked by community votes.</li>
+<li><b>How are listings screened?</b> Listings are screened for a general audience: products that aren't suitable for all ages are left out, and links to broken websites are withheld. Spotted something that shouldn't be there? Email us.</li>
 <li><b>Where are deal codes?</b> On each product's Microlaunch page.</li>
 <li><b>Can I remove my product?</b> Yes — email us from the address you used on Microlaunch.</li>
 </ul>`)
@@ -98,7 +99,7 @@ ${toolEnabled("compare_products") ? `<tr><td>compare_products <span class="tag">
 <h2>2. The ChatGPT app</h2>
 <ul>
 <li><span class="ok">Done</span>: connected in developer mode as "Microlaunch (dev)" and tested with real prompts.</li>
-<li>Consumer-only to fit OpenAI's rules: launch planning is off, no plans/prices/checkout, Featured products labelled.</li>
+<li>Consumer-only to fit OpenAI's rules: launch planning is off, no plans/prices/checkout, ranking by community votes only, listings screened for a general audience.</li>
 <li>Submission package ready: listing, logo, 5 positive + 3 negative test cases, domain verified.</li>
 <li>After approval OpenAI rescans the server daily: changes to existing tools ship by deploying; brand-new tools need re-approval.</li>
 </ul>
@@ -131,7 +132,7 @@ ${toolEnabled("compare_products") ? `<tr><td>compare_products <span class="tag">
 <ol>
 <li><b>A new source of visitors at a fixed, tiny cost.</b> People asking an assistant "what tool should I use?" get Microlaunch products; our API load stays at ~${s.apiPerDay} calls/day.</li>
 <li><b>A stronger pitch to makers.</b> Visits show up in makers' own analytics as <code>ref=microlaunch</code>, and our click counts become "your launch got N visits from ChatGPT".</li>
-<li><b>Paid launches discovered first, within the rules.</b> Featured products rank first among equally relevant results and are labelled. No ads inside ChatGPT; "get found in ChatGPT and Claude" becomes a reason to launch on Microlaunch.</li>
+<li><b>Within the rules.</b> No ads or paid ranking inside ChatGPT (results are ordered by community votes); "get found in ChatGPT and Claude" is still a reason to launch on Microlaunch.</li>
 <li><b>Demand data.</b> What people search for and click feeds SEO pages, newsletters and maker outreach.</li>
 <li><b>A cleaner directory.</b> The daily broken-link list is a ready-made cleanup queue for microlaunch.net.</li>
 <li><b>Being early</b> in ChatGPT's app directory and Claude's connector and plugin directories.</li>

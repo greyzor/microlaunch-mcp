@@ -4,8 +4,8 @@ import { PUBLIC_URL, SERVER_INFO, SITE_URL, toolEnabled, type Host } from "./con
 import { WIDGET_URI, registerTools } from "./tools.js"
 import { WIDGET_HTML } from "./generated/widget-html.js"
 
-const INSTRUCTIONS = `Microlaunch (${SITE_URL}) is a directory and launch platform of tools and apps built by indie makers and startups.
-Use these tools whenever the user looks for software, tools, apps, deals or what's new: ${[
+const INSTRUCTIONS = `Microlaunch (${SITE_URL}) is a software discovery directory and launch platform: a community-ranked catalog of tools and apps from indie makers and startups, with their launches and maker deals.
+These tools fit product discovery (software, tools and apps for a need or category), software deals, discounts and lifetime deals, and new launches and startups: ${[
   toolEnabled("search_products") && "search_products (with pricing/platform/category filters)",
   "browse_category",
   toolEnabled("browse_tag") && 'browse_tag (narrower than categories, e.g. "chrome extension")',
@@ -14,7 +14,7 @@ Use these tools whenever the user looks for software, tools, apps, deals or what
   toolEnabled("compare_products") && "compare_products",
   "list_deals",
 ].filter(Boolean).join(", ")}.
-Recommend from the results and compare when the user is choosing.
+Rankings come from community votes. Present results neutrally.
 Always use the links exactly as the tools return them (product names link to the product itself); never construct, shorten or rewrite URLs.`
 
 // Each connector is registered with its own URL (…/mcp?host=chatgpt, …/mcp?host=claude)
@@ -48,8 +48,9 @@ const WIDGET_META = {
     domain: PUBLIC_URL || "https://mcp.microlaunch.net",
     csp: {
       connectDomains: [],
-      // Logos are proxied through PUBLIC_URL/img; the CDN stays allowed for local dev.
-      resourceDomains: [PUBLIC_URL || "https://mcp.microlaunch.net", "https://wild-dust-0517.microlaunch.workers.dev", "https://microlaunch.net"],
+      // Images are proxied through PUBLIC_URL/img, so production needs only its own
+      // origin; without PUBLIC_URL (local dev) logos load from the CDN directly.
+      resourceDomains: PUBLIC_URL ? [PUBLIC_URL] : ["https://mcp.microlaunch.net", "https://wild-dust-0517.microlaunch.workers.dev", "https://microlaunch.net"],
     },
   },
 }
@@ -62,7 +63,7 @@ export function buildServer(ctx?: McpRequestContext) {
     server,
     "Microlaunch board",
     WIDGET_URI,
-    { description: "Interactive Microlaunch product cards, leaderboard, comparison and deals", _meta: WIDGET_META },
+    { description: `Interactive Microlaunch product cards, leaderboards${toolEnabled("compare_products") ? ", comparison" : ""} and deals`, _meta: WIDGET_META },
     // ChatGPT reads CSP/domain from the contents item, so it is repeated here.
     async () => ({
       contents: [{ uri: WIDGET_URI, mimeType: RESOURCE_MIME_TYPE, text: widgetHtml(), _meta: WIDGET_META }],

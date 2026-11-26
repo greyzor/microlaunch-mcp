@@ -24,7 +24,7 @@ function withLinks(items: ProductCard[], host: Host, campaign: string) {
 }
 
 function bullet(c: ProductCard & { url: string }) {
-  const tags = [c.featured ? "Featured" : "", c.category || "", c.votes ? `${c.votes} votes` : ""].filter(Boolean).join(" · ")
+  const tags = [c.category || "", c.votes ? `${c.votes} votes` : ""].filter(Boolean).join(" · ")
   return `- [${c.name}](${c.url})${c.tagline ? ` — ${c.tagline}` : ""}${tags ? ` (${tags})` : ""}`
 }
 
@@ -100,7 +100,7 @@ export function registerTools(server: McpServer, host: Host) {
     {
       title: "Best tools in a category",
       description:
-        "List the best-ranked products on Microlaunch in a category (e.g. 'AI', 'marketing', 'dev tools', 'productivity', 'SEO', 'no-code'). Use for 'best X tools' or 'what tools exist for Y' questions. If the category is unknown, the result lists valid categories.",
+        "List the top products in a Microlaunch category (e.g. 'AI', 'marketing', 'dev tools', 'productivity', 'SEO', 'no-code'), ranked by community votes. Suited to discovering software, tools or apps of a given kind. If the category is unknown, the result lists valid categories.",
       inputSchema: { category: z.string().min(2).max(40).describe("Category name or slug") },
       annotations: READ_ONLY,
       _meta: { ...ui, "openai/toolInvocation/invoking": "Browsing the category…", "openai/toolInvocation/invoked": "Category loaded" },
@@ -182,7 +182,7 @@ export function registerTools(server: McpServer, host: Host) {
     {
       title: "Top launches on Microlaunch",
       description:
-        "Get the current Microlaunch leaderboard: top-ranked launches from today, the last 7 days or the last 30 days, optionally filtered by category slug (e.g. ai, marketing, dev-tools, productivity, seo). Use for 'what's new/trending in indie products' questions.",
+        "Get the products launched on Microlaunch today, in the last 7 days or in the last 30 days, ranked by community votes and optionally filtered by category (e.g. ai, marketing, dev-tools, productivity, seo). Suited to new launches, startups and what's trending.",
       inputSchema: {
         scope: z.enum(["today", "this_week", "this_month"]).optional().describe("Defaults to this_week"),
         category: z.string().max(40).optional().describe("Category name or slug, e.g. ai, marketing, dev tools"),
@@ -328,7 +328,7 @@ export function registerTools(server: McpServer, host: Host) {
     {
       title: "Maker deals on Microlaunch",
       description:
-        "List active discounts and lifetime deals from indie makers on Microlaunch, optionally by category slug. Codes are revealed on Microlaunch, not here.",
+        "List active software deals from makers on Microlaunch (discounts, coupons, lifetime deals, free trials), optionally by category. Coupon codes are revealed on Microlaunch, not here.",
       inputSchema: { category: z.string().max(40).optional().describe("Category name or slug, e.g. ai, marketing") },
       annotations: READ_ONLY,
       _meta: { ...ui, "openai/toolInvocation/invoking": "Loading deals…", "openai/toolInvocation/invoked": "Deals loaded" },

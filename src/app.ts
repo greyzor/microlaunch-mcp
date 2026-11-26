@@ -10,7 +10,8 @@ import { buildReport, renderReport } from "./report.js"
 import { snapshot } from "./snapshot.js"
 import { upstreamStats } from "./upstream.js"
 import { timingSafeEqual } from "node:crypto"
-import { inBackground } from "./runtime.js"
+import { ICON_PNG_B64, LOGO_PNG_B64 } from "./generated/icons.js"
+import { inBackground, kv } from "./runtime.js"
 import { detectHost, detectSource, handler } from "./server.js"
 
 const CORS = {
@@ -127,10 +128,42 @@ export async function route(request: Request): Promise<Response> {
     })
     return new Response(page, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" } })
   }
+  if (path === "/icon.png" || path === "/favicon.ico" || path === "/logo.png") {
+    const bytes = Buffer.from(path === "/logo.png" ? LOGO_PNG_B64 : ICON_PNG_B64, "base64")
+    return new Response(bytes, {
+      headers: {
+        "content-type": "image/png",
+        "cache-control": "public, max-age=86400",
+        "access-control-allow-origin": "*",
+        "cross-origin-resource-policy": "cross-origin",
+      },
+    })
+  }
+  // Demo video for the ChatGPT review (uploaded to KV key "asset:demo.mp4").
+  if (path === "/demo.mp4") return demoVideo(request)
   if (path === "/privacy") return html(privacyPage())
   if (path === "/support") return html(supportPage())
   if (path === "/") return html(homePage())
   return new Response("Not found", { status: 404 })
+}
+
+async function demoVideo(request: Request): Promise<Response> {
+  const buf = await kv()?.get("asset:demo.mp4", "arrayBuffer")
+  if (!buf) return new Response("Not found", { status: 404 })
+  const total = buf.byteLength
+  const headers: Record<string, string> = {
+    "content-type": "video/mp4",
+    "accept-ranges": "bytes",
+    "cache-control": "public, max-age=3600",
+  }
+  const m = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get("range") || "")
+  if (m && (m[1] || m[2])) {
+    let start = m[1] ? Number(m[1]) : Math.max(0, total - Number(m[2]))
+    let end = m[1] && m[2] ? Math.min(Number(m[2]), total - 1) : total - 1
+    if (start >= total || start > end) return new Response(null, { status: 416, headers: { "content-range": `bytes */${total}` } })
+    return new Response(buf.slice(start, end + 1), { status: 206, headers: { ...headers, "content-range": `bytes ${start}-${end}/${total}`, "content-length": String(end - start + 1) } })
+  }
+  return new Response(buf, { headers: { ...headers, "content-length": String(total) } })
 }
 
 // Unlisted project brief (share the link, don't publish it).
