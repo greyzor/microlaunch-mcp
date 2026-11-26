@@ -60,3 +60,12 @@ Questions or issues: [open an issue](https://github.com/greyzor/microlaunch-mcp/
 ## License
 
 MIT
+
+## Claude Code plugin
+
+This repo is also a Claude Code plugin marketplace (`.claude-plugin/marketplace.json` → `claude-plugin/`):
+
+```
+/plugin marketplace add greyzor/microlaunch-mcp
+/plugin install microlaunch@microlaunch
+```

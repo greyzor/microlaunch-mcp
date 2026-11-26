@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "microlaunch": {
+      "type": "http",
+      "url": "https://mcp.microlaunch.net/mcp?host=claude_code"
+    }
+  }
+}

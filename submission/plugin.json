@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "microlaunch",
   "version": "1.0.0",
-  "description": "Find, compare and discover tools and apps built by indie makers and startups on Microlaunch.",
+  "description": "Discover tools and apps built by indie makers and startups on Microlaunch: best in each category, latest launches and maker deals.",
   "author": {
     "name": "Microlaunch",
     "email": "microlaunch@stimpack.io",
@@ -23,13 +23,13 @@
       "interface": {
         "displayName": "Microlaunch",
         "shortDescription": "Discover indie tools & apps",
-        "longDescription": "Microlaunch helps you find software built by indie makers and startups.\n\n• Search tools for any need, with filters for pricing (free, subscription, one-time, lifetime deal), platform and category.\n• See the best-ranked products in a category, or what launched today and this week.\n• Compare 2–4 tools side by side, shortlist favourites and ask ChatGPT to help you choose.\n• Browse active maker deals and discounts (codes are claimed on Microlaunch).\n\nResults come from Microlaunch's public directory and community rankings. Products whose makers chose a paid Microlaunch launch package are clearly labelled “Featured”. Every result links to the product's website and to its Microlaunch page with screenshots and reviews.",
+        "longDescription": "Microlaunch helps you find software built by indie makers and startups.\n\n• See the best-ranked products in any category, from AI and marketing to productivity and dev tools.\n• Find out what launched today, this week or this month.\n• Open any product for its description, stage, votes, reviews and awards, shortlist favourites and ask ChatGPT to help you choose.\n• Browse active maker deals and discounts (codes are claimed on Microlaunch).\n\nResults come from Microlaunch's public directory and community rankings. Products whose makers chose a paid Microlaunch launch package are clearly labelled “Featured”. Every result links to the product's website and to its Microlaunch page with screenshots and reviews.",
         "developerName": "Microlaunch",
         "category": "Productivity",
         "capabilities": [
-          "Search indie tools",
           "Browse categories",
-          "Compare products",
+          "Latest launches",
+          "Product details",
           "List maker deals"
         ],
         "websiteURL": "https://microlaunch.net",
@@ -37,9 +37,9 @@
         "privacyPolicyURL": "https://mcp.microlaunch.net/privacy",
         "termsOfServiceURL": "https://microlaunch.net/terms",
         "defaultPrompt": [
-          "Find me a free invoicing tool for freelancers",
           "What are the best AI tools on Microlaunch?",
-          "Compare Tag Parrot and AIMD"
+          "What launched on Microlaunch this week?",
+          "Any deals on marketing tools?"
         ],
         "brandColor": "#6E2CF5",
         "brandColorDark": "#B79BFF",
@@ -51,28 +51,28 @@
         "test_cases": {
           "positive": [
             {
-              "description": "Find a tool with a pricing filter",
-              "prompt": "Find me a free invoicing tool for freelancers",
-              "tools_triggered": "search_products",
-              "expected_behavior": "Shows a list of free invoicing products from Microlaunch (pricing=free) with links to each product page; the model recommends one or two based on the listings."
-            },
-            {
               "description": "Best products in a category",
               "prompt": "What are the best AI tools on Microlaunch?",
               "tools_triggered": "browse_category",
               "expected_behavior": "Shows the top-ranked products in the AI category (up to 10) with Featured labels where applicable and a link to the full category."
             },
             {
-              "description": "Compare products by name",
-              "prompt": "Compare Tag Parrot and AIMD",
-              "tools_triggered": "compare_products",
-              "expected_behavior": "Shows a side-by-side table (what it does, pricing model, category, stage, votes, reviews, awards) and summarises which fits which need."
+              "description": "Best products in another category, loose name",
+              "prompt": "Show me the top productivity apps on Microlaunch",
+              "tools_triggered": "browse_category",
+              "expected_behavior": "Resolves 'productivity apps' to the productivity category and shows its top-ranked products with links to each product's website."
             },
             {
               "description": "Recent launches",
               "prompt": "What launched on Microlaunch this week?",
               "tools_triggered": "top_launches",
               "expected_behavior": "Shows this week's top-ranked launches; widens to the last 30 days if the week has fewer than three launches and says so."
+            },
+            {
+              "description": "Product details by name",
+              "prompt": "Tell me about Tag Parrot on Microlaunch",
+              "tools_triggered": "get_product",
+              "expected_behavior": "Shows Tag Parrot's card (what it does, category, stage, votes, reviews, awards) with buttons to visit its website and its Microlaunch page."
             },
             {
               "description": "Maker deals in a category",
@@ -101,7 +101,7 @@
         "commerce_description": "This app does not sell products or process payments. It only shows public product listings and links to microlaunch.net."
       },
       "publication": {
-        "release_notes": "Initial release: search with filters, best-in-category, recent launches, product details, side-by-side comparison and maker deals."
+        "release_notes": "Initial release: best-in-category, recent launches, product details and maker deals."
       }
     }
   }
