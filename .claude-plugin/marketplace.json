@@ -5,13 +5,13 @@
     "email": "microlaunch@stimpack.io"
   },
   "metadata": {
-    "description": "Microlaunch plugins for Claude Code"
+    "description": "Microlaunch plugins for Claude"
   },
   "plugins": [
     {
       "name": "microlaunch",
       "source": "./claude-plugin",
-      "description": "Find the best indie tools by category, latest launches and maker deals from Microlaunch, right in Claude Code.",
+      "description": "A way for Microlaunch users and community to browse indie software, new launches and maker deals with Claude: top tools by category, today's launches, product details and active deals.",
       "category": "productivity"
     }
   ]

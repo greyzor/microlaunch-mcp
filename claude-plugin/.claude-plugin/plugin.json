@@ -1,21 +1,25 @@
 {
   "name": "microlaunch",
-  "version": "0.1.0",
-  "description": "Find the best indie tools by category, latest launches and maker deals from Microlaunch, right in Claude Code.",
+  "displayName": "Microlaunch",
+  "version": "0.2.0",
+  "description": "A way for Microlaunch users and community to browse indie software, new launches and maker deals with Claude: top tools by category, today's launches, product details and active deals.",
   "author": {
     "name": "Microlaunch",
     "email": "microlaunch@stimpack.io",
     "url": "https://microlaunch.net"
   },
   "homepage": "https://github.com/greyzor/microlaunch-mcp",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "keywords": [
     "microlaunch",
+    "software discovery",
     "indie",
-    "tools",
     "saas",
+    "tools",
     "launches",
+    "startups",
     "deals"
   ],
-  "privacyPolicyUrl": "https://mcp.microlaunch.net/privacy"
+  "privacyPolicyUrl": "https://mcp.microlaunch.net/privacy",
+  "repository": "https://github.com/greyzor/microlaunch-mcp"
 }
