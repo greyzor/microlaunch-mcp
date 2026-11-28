@@ -219,7 +219,7 @@ export function registerTools(server: McpServer, host: Host) {
     {
       title: "Microlaunch product details",
       description:
-        `Get details for one Microlaunch product by its slug (from ${toolEnabled("browse_tag") ? "browse_category, browse_tag" : "browse_category"} or top_launches results): description, category, stage, votes, reviews count and awards.`,
+        "Get details for one Microlaunch product by its slug: description, category, stage, votes, reviews count and awards.",
       inputSchema: { slug: z.string().min(1).max(100).describe("Product slug, e.g. 'tagparrot'") },
       annotations: READ_ONLY,
       _meta: { ...ui, "openai/toolInvocation/invoking": "Opening product…", "openai/toolInvocation/invoked": "Product loaded" },
