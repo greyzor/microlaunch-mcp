@@ -1,0 +1,17 @@
+{
+  "name": "microlaunch",
+  "owner": {
+    "name": "Microlaunch",
+    "email": "microlaunch@stimpack.io"
+  },
+  "metadata": {
+    "description": "Microlaunch plugins for Cursor"
+  },
+  "plugins": [
+    {
+      "name": "microlaunch",
+      "source": "cursor-plugin",
+      "description": "Browse indie software, new launches and maker deals on Microlaunch: top tools by category, today's launches, product details and active deals."
+    }
+  ]
+}

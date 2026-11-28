@@ -69,3 +69,9 @@ This repo is also a Claude Code plugin marketplace (`.claude-plugin/marketplace.
 /plugin marketplace add greyzor/microlaunch-mcp
 /plugin install microlaunch@microlaunch
 ```
+
+## Cursor plugin
+
+This repo is also a Cursor plugin marketplace (`.cursor-plugin/marketplace.json` → `cursor-plugin/`). The plugin connects to `https://mcp.microlaunch.net/mcp?host=cursor` with no API key. Usage and configuration: [`cursor-plugin/README.md`](cursor-plugin/README.md).
+
+Submit the public repository at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish) once this folder is on the default branch.
